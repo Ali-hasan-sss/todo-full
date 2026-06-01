@@ -46,7 +46,7 @@ export class AuthController {
   }
 
   /** إنشاء/تحديث حسابات demo و admin (مفيد بعد إعادة نشر Render) */
-  async bootstrap(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  async bootstrap(_req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       await runDemoSeed(prisma);
       res.json({
