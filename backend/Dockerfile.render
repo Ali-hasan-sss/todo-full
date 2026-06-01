@@ -5,7 +5,7 @@ FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 COPY backend/package.json backend/package-lock.json* ./
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+RUN if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --ignore-scripts; fi
 COPY backend/ .
 RUN npx prisma generate && npm run build
 
