@@ -68,5 +68,20 @@ cd /app
 npx prisma migrate deploy
 npx prisma db seed
 
+echo "Verifying demo user..."
+node -e "
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+(async () => {
+  const p = new PrismaClient();
+  const u = await p.user.findUnique({ where: { email: 'demo@todo.app' } });
+  if (!u) { console.error('SEED CHECK FAILED: demo@todo.app not found'); process.exit(1); }
+  const ok = await bcrypt.compare('Password123!', u.password);
+  if (!ok) { console.error('SEED CHECK FAILED: demo password mismatch'); process.exit(1); }
+  console.log('SEED CHECK OK: demo@todo.app ready');
+  await p.\$disconnect();
+})().catch((e) => { console.error(e); process.exit(1); });
+"
+
 echo "Starting API + Worker (CORS: $CORS_ORIGIN)..."
 exec npm run start:all

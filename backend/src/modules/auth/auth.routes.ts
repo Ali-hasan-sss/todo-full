@@ -6,6 +6,7 @@ import { registerSchema, loginSchema, refreshTokenSchema } from "./auth.dto";
 
 const router = Router();
 
+router.post("/bootstrap", authController.bootstrap.bind(authController));
 router.post("/register", validate(registerSchema), authController.register.bind(authController));
 router.post("/login", validate(loginSchema), authController.login.bind(authController));
 router.post("/refresh", validate(refreshTokenSchema), authController.refresh.bind(authController));

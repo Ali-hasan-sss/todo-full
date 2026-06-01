@@ -88,7 +88,9 @@ git push
 
 | المتغير               | القيمة                                          |
 | --------------------- | ----------------------------------------------- |
-| `NEXT_PUBLIC_API_URL` | `https://<اسم-خدمة-render>.onrender.com/api/v1` |
+| `NEXT_PUBLIC_API_URL` | `https://todo-full-160n.onrender.com/api/v1` (**يجب** أن ينتهي بـ `/api/v1`) |
+
+> إذا كان `https://xxx.onrender.com` فقط (بدون `/api/v1`)، الطلبات تذهب إلى `/auth/login` وتُرجع **404**. الكود يُصلح ذلك تلقائياً بعد إعادة نشر Vercel.
 
 4. انشر، ثم ضع رابط Vercel في Render → `CORS_ORIGIN` → **Manual Deploy**.
 

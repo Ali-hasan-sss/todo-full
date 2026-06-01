@@ -2,6 +2,8 @@ import type { Response, NextFunction } from "express";
 import { authService } from "./auth.service";
 import type { AuthRequest } from "../../middleware/auth.middleware";
 import type { RegisterDto, LoginDto, RefreshTokenDto } from "./auth.dto";
+import { prisma } from "../../config/database";
+import { runDemoSeed, SEED_DEMO_EMAIL, SEED_DEFAULT_PASSWORD } from "../../utils/seed-data";
 
 export class AuthController {
   async register(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
@@ -38,6 +40,23 @@ export class AuthController {
         await authService.logout(req.user.userId);
       }
       res.json({ success: true, message: "Logged out successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /** إنشاء/تحديث حسابات demo و admin (مفيد بعد إعادة نشر Render) */
+  async bootstrap(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await runDemoSeed(prisma);
+      res.json({
+        success: true,
+        message: "Demo accounts ready",
+        data: {
+          demo: { email: SEED_DEMO_EMAIL, password: SEED_DEFAULT_PASSWORD },
+          admin: { email: "admin@todo.app", password: SEED_DEFAULT_PASSWORD },
+        },
+      });
     } catch (error) {
       next(error);
     }

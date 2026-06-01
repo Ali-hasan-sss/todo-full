@@ -22,7 +22,8 @@ function sanitizeUser(user: User): Omit<User, "password" | "refreshToken"> {
 
 export class AuthService {
   async register(dto: RegisterDto): Promise<AuthResponse> {
-    const existing = await authRepository.findByEmail(dto.email);
+    const email = dto.email.trim().toLowerCase();
+    const existing = await authRepository.findByEmail(email);
     if (existing) {
       throw new ConflictError("Email already registered");
     }
@@ -30,7 +31,7 @@ export class AuthService {
     const hashed = await hashPassword(dto.password);
     const user = await authRepository.create({
       name: dto.name,
-      email: dto.email,
+      email,
       password: hashed,
     });
 
@@ -39,7 +40,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<AuthResponse> {
-    const user = await authRepository.findByEmail(dto.email);
+    const user = await authRepository.findByEmail(dto.email.trim().toLowerCase());
     if (!user) {
       throw new UnauthorizedError("Invalid credentials");
     }

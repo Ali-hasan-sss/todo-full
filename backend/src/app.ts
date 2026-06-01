@@ -9,6 +9,9 @@ import authRoutes from "./modules/auth/auth.routes";
 import taskRoutes from "./modules/tasks/task.routes";
 import notificationRoutes from "./modules/notifications/notification.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
+import { prisma } from "./config/database";
+import bcrypt from "bcryptjs";
+import { SEED_DEMO_EMAIL } from "./utils/seed-data";
 
 const app = express();
 
@@ -41,9 +44,26 @@ const authLimiter = rateLimit({
 });
 app.use("/api/v1/auth/login", authLimiter);
 app.use("/api/v1/auth/register", authLimiter);
+// Alias when NEXT_PUBLIC_API_URL omits /api/v1 (POST /auth/login → 404 otherwise)
+app.use("/auth/login", authLimiter);
+app.use("/auth/register", authLimiter);
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+app.get("/health", async (_req, res) => {
+  try {
+    const demo = await prisma.user.findUnique({ where: { email: SEED_DEMO_EMAIL } });
+    let demoLoginReady = false;
+    if (demo) {
+      demoLoginReady = await bcrypt.compare("Password123!", demo.password);
+    }
+    res.json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      demoUserExists: Boolean(demo),
+      demoLoginReady,
+    });
+  } catch {
+    res.json({ status: "ok", timestamp: new Date().toISOString(), database: "unavailable" });
+  }
 });
 
 const apiRouter = express.Router();
@@ -53,6 +73,7 @@ apiRouter.use("/notifications", notificationRoutes);
 apiRouter.use("/dashboard", dashboardRoutes);
 
 app.use("/api/v1", apiRouter);
+app.use("/auth", authRoutes);
 app.use(errorHandler);
 
 export default app;
