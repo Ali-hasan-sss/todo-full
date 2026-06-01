@@ -1,9 +1,9 @@
-# صورة واحدة لـ Render: PostgreSQL + Redis + API + Worker
-# المتغير الوحيد المطلوب عند النشر: CORS_ORIGIN
+# يُبنى من جذر المستودع (يتطلب وجود مجلد backend في Git)
+# Render يستخدم backend/Dockerfile.render — انظر render.yaml
 
 FROM node:20-bookworm-slim AS builder
 
-WORKDIR /app/backend
+WORKDIR /app
 COPY backend/package.json backend/package-lock.json ./
 RUN npm ci
 COPY backend/ .
@@ -16,13 +16,13 @@ RUN apt-get update \
     postgresql postgresql-contrib redis-server openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app/backend
+WORKDIR /app
 
-COPY --from=builder /app/backend/node_modules ./node_modules
-COPY --from=builder /app/backend/dist ./dist
-COPY --from=builder /app/backend/package.json ./
-COPY --from=builder /app/backend/prisma ./prisma
-COPY docker/render-entrypoint.sh /usr/local/bin/render-entrypoint.sh
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/prisma ./prisma
+COPY backend/docker/render-entrypoint.sh /usr/local/bin/render-entrypoint.sh
 RUN chmod +x /usr/local/bin/render-entrypoint.sh
 
 ENV PGDATA=/var/lib/postgresql/data

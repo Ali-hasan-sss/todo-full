@@ -27,8 +27,8 @@
 2. Render → **New → Web Service** (وليس Blueprint).
 3. اربط المستودع.
 4. **Environment:** `Docker`
-5. **Dockerfile Path:** `Dockerfile.render`
-6. **Root Directory:** `.` (جذر المستودع)
+5. **Dockerfile Path:** `backend/Dockerfile.render`
+6. **Docker Context / Root Directory:** `backend` (أو اترك الجذر واستخدم المسارات من `render.yaml`)
 7. أضف متغير البيئة:
    - `CORS_ORIGIN` = `https://your-app.vercel.app`
 8. **Create Web Service** → انتظر البناء.
@@ -51,8 +51,20 @@
 ### اختبار محلي للصورة
 
 ```bash
-docker build -f Dockerfile.render -t taskflow-render .
+docker build -f backend/Dockerfile.render -t taskflow-render backend
 docker run --rm -p 4000:4000 -e CORS_ORIGIN=http://localhost:3000 taskflow-render
+```
+
+### إذا فشل البناء: `backend/package.json not found`
+
+غالباً مجلد `backend` غير مرفوع إلى GitHub (مستودع Git متداخل). من جذر المشروع:
+
+```bash
+# احذف .git الداخلي إن وُجد
+rm -rf backend/.git frontend/.git
+git add backend frontend
+git commit -m "Include backend and frontend in monorepo"
+git push
 ```
 
 ### تحذير مهم (الخطة المجانية)
