@@ -1,6 +1,14 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+/** يضمن وجود /api/v1 حتى لو نُسيت في Vercel (مثلاً https://xxx.onrender.com فقط) */
+function normalizeApiBaseUrl(raw: string | undefined): string {
+  const base = (raw ?? "http://localhost:4000/api/v1").trim().replace(/\/$/, "");
+  if (base.endsWith("/api/v1")) return base;
+  if (base.endsWith("/api")) return `${base}/v1`;
+  return `${base}/api/v1`;
+}
+
+const API_URL = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL);
 
 export const api = axios.create({
   baseURL: API_URL,
