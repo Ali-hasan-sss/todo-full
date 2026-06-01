@@ -27,11 +27,11 @@
 2. Render → **New → Web Service** (وليس Blueprint).
 3. اربط المستودع.
 4. **Environment:** `Docker`
-5. **Root Directory:** اتركه **فارغاً** (مهم جداً)
-6. **Dockerfile Path:** `Dockerfile.render` (في جذر المستودع، ليس داخل `backend`)
-7. **Docker Context:** `.` (جذر المستودع)
+5. **Root Directory:** فارغ **أو** `backend` (كلاهما يعمل الآن)
+6. **Dockerfile Path:** `Dockerfile.render`
+7. **Docker Context:** `.` (يجب أن يكون جذر المستودع — لا `backend`)
 
-> إذا وضعت Root Directory = `backend` سيُستخدم `backend/Dockerfile.render` بينما السياق يبقى جذر المستودع فيفشل البناء بـ `package.json not found`.
+> إذا فشل البناء بـ `package.json not found`: في Settings غيّر **Docker Context** إلى `.` واحذف `backend` من Docker Context.
 7. أضف متغير البيئة:
    - `CORS_ORIGIN` = `https://your-app.vercel.app`
 8. **Create Web Service** → انتظر البناء.

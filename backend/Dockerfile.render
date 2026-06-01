@@ -1,12 +1,12 @@
-# للتطوير المحلي فقط — على Render استخدم Dockerfile.render من جذر المستودع
-# docker build -f Dockerfile.render -t taskflow .
+# نفس Dockerfile.render في جذر المستودع — لأن Render يضع Root Directory = backend
+# سياق البناء الفعلي = جذر المستودع كاملاً، لذا المسارات تبدأ بـ backend/
 
 FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
-COPY package.json package-lock.json* ./
+COPY backend/package.json backend/package-lock.json* ./
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
-COPY . .
+COPY backend/ .
 RUN npx prisma generate && npm run build
 
 FROM node:20-bookworm-slim AS runner
@@ -22,7 +22,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma ./prisma
-COPY docker/render-entrypoint.sh /usr/local/bin/render-entrypoint.sh
+COPY backend/docker/render-entrypoint.sh /usr/local/bin/render-entrypoint.sh
 RUN chmod +x /usr/local/bin/render-entrypoint.sh
 
 ENV PGDATA=/var/lib/postgresql/data
