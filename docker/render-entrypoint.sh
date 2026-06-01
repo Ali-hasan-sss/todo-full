@@ -65,7 +65,7 @@ export REDIS_URL="redis://127.0.0.1:6379"
 echo "Running migrations and seed..."
 cd /app
 npx prisma migrate deploy
-npx prisma db seed
+node dist/scripts/seed.js
 
 echo "Starting API + Worker (CORS: $CORS_ORIGIN)..."
 exec npm run start:all
