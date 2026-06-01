@@ -1,14 +1,14 @@
-# Render — خدمة Docker واحدة (مجاني، بدون Blueprint مدفوع)
-# New → Web Service → Docker → اربط المستودع
-# المتغير الوحيد المطلوب: CORS_ORIGIN = رابط Vercel
+# Render — Docker (مجلد backend)
+# إعدادات Dashboard: Root Directory = backend (أو اترك فارغاً واستخدم المسارات أدناه)
 
 services:
   - type: web
     name: taskflow
     runtime: docker
     plan: free
-    dockerfilePath: ./backend/Dockerfile.render
-    dockerContext: ./backend
+    rootDir: backend
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV

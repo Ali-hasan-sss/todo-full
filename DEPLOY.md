@@ -27,8 +27,11 @@
 2. Render → **New → Web Service** (وليس Blueprint).
 3. اربط المستودع.
 4. **Environment:** `Docker`
-5. **Dockerfile Path:** `backend/Dockerfile.render`
-6. **Docker Context / Root Directory:** `backend` (أو اترك الجذر واستخدم المسارات من `render.yaml`)
+5. **Root Directory:** `backend`
+6. **Dockerfile Path:** `Dockerfile.render` (نسبياً داخل `backend`، وليس `backend/Dockerfile.render`)
+7. **Docker Context:** `.` (النقطة = مجلد `backend` عندما يكون Root Directory = `backend`)
+
+> إذا كان Root Directory فارغاً: استخدم Dockerfile Path = `backend/Dockerfile.render` و Docker Context = `backend`.
 7. أضف متغير البيئة:
    - `CORS_ORIGIN` = `https://your-app.vercel.app`
 8. **Create Web Service** → انتظر البناء.
