@@ -1,14 +1,11 @@
 import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
-/** CLI config (migrate/seed). Runtime URL stays in schema.prisma for Prisma 6. */
+/** Prisma 6: connection URL stays in schema.prisma; this file is for CLI (migrate/seed). */
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
     seed: "tsx prisma/seed.ts",
-  },
-  datasource: {
-    url: env("DATABASE_URL"),
   },
 });
