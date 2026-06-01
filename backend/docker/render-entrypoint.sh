@@ -7,7 +7,6 @@ if [ -z "${CORS_ORIGIN:-}" ]; then
 fi
 
 export PORT="${PORT:-4000}"
-export PGDATA="${PGDATA:-/var/lib/postgresql/data}"
 
 if [ -z "${JWT_ACCESS_SECRET:-}" ]; then
   export JWT_ACCESS_SECRET="$(openssl rand -hex 32)"
@@ -23,30 +22,35 @@ echo "Starting Redis..."
 redis-server --daemonize yes --bind 127.0.0.1 --port 6379 --maxmemory-policy noeviction
 
 echo "Starting PostgreSQL..."
-mkdir -p "$PGDATA"
-chown -R postgres:postgres "$PGDATA"
+PG_VERSION="$(ls -1 /usr/lib/postgresql 2>/dev/null | sort -rn | head -1)"
+PG_CLUSTER="${PG_CLUSTER:-main}"
 
-if [ ! -f "$PGDATA/PG_VERSION" ]; then
-  su - postgres -c "initdb -D '$PGDATA' -E UTF8 --locale=C"
-  {
-    echo "listen_addresses = '127.0.0.1'"
-    echo "port = 5432"
-  } >> "$PGDATA/postgresql.conf"
-  {
-    echo "local all all trust"
-    echo "host all all 127.0.0.1/32 trust"
-  } >> "$PGDATA/pg_hba.conf"
+if [ -z "$PG_VERSION" ]; then
+  echo "ERROR: PostgreSQL not installed in image"
+  exit 1
 fi
 
-su - postgres -c "pg_ctl -D '$PGDATA' -w start"
+if ! pg_lsclusters -h 2>/dev/null | awk '{print $1" "$2}' | grep -qx "${PG_VERSION} ${PG_CLUSTER}"; then
+  echo "Creating PostgreSQL cluster ${PG_VERSION}/${PG_CLUSTER}..."
+  pg_createcluster "$PG_VERSION" "$PG_CLUSTER" --port 5432
+fi
 
-until su - postgres -c "pg_isready -q"; do
+pg_ctlcluster "$PG_VERSION" "$PG_CLUSTER" start
+
+until pg_isready -h 127.0.0.1 -p 5432 -q; do
   sleep 1
 done
 
 until redis-cli -h 127.0.0.1 ping 2>/dev/null | grep -q PONG; do
   sleep 1
 done
+
+# السماح بالاتصال عبر TCP من التطبيق (Prisma)
+PG_HBA="/etc/postgresql/${PG_VERSION}/${PG_CLUSTER}/pg_hba.conf"
+if [ -f "$PG_HBA" ] && ! grep -q "127.0.0.1/32.*todo_db" "$PG_HBA"; then
+  echo "host todo_db todo 127.0.0.1/32 scram-sha-256" >> "$PG_HBA"
+  pg_ctlcluster "$PG_VERSION" "$PG_CLUSTER" reload
+fi
 
 if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='todo'\"" | grep -q 1; then
   su - postgres -c "psql -c \"CREATE USER todo WITH PASSWORD 'todo_secret';\""
