@@ -1,11 +1,11 @@
-# يُبنى من جذر المستودع (يتطلب وجود مجلد backend في Git)
-# Render يستخدم backend/Dockerfile.render — انظر render.yaml
+# Render: سياق البناء = جذر المستودع (Docker Context = .)
+# Dashboard: Root Directory فارغ | Dockerfile Path = Dockerfile.render
 
 FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
-COPY backend/package.json backend/package-lock.json ./
-RUN npm ci
+COPY backend/package.json backend/package-lock.json* ./
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 COPY backend/ .
 RUN npx prisma generate && npm run build
 

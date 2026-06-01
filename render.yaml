@@ -1,12 +1,11 @@
-# Render — Docker (مجلد backend)
-# إعدادات Dashboard: Root Directory = backend (أو اترك فارغاً واستخدم المسارات أدناه)
+# Render — Docker من جذر المستودع
+# Dashboard: Root Directory = (فارغ) | Dockerfile = Dockerfile.render | Docker Context = .
 
 services:
   - type: web
     name: taskflow
     runtime: docker
     plan: free
-    rootDir: backend
     dockerfilePath: ./Dockerfile.render
     dockerContext: .
     healthCheckPath: /health
