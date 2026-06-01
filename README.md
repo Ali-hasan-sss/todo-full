@@ -22,10 +22,11 @@ A production-ready full-stack task management application with Kanban boards, ca
 
 ## Deployment (Render + Vercel)
 
-See **[DEPLOY.md](./DEPLOY.md)** for full Arabic/English deployment guide.
+See **[DEPLOY.md](./DEPLOY.md)** for the full guide.
 
-- **Render:** root `render.yaml` — PostgreSQL, Redis, API, notification Worker (one Blueprint deploy).
-- **Vercel:** set root directory to `frontend`, env `NEXT_PUBLIC_API_URL=https://<your-api>.onrender.com/api/v1`.
+- **Render (recommended):** `Dockerfile.render` — one Docker image (PostgreSQL + Redis + API + Worker). Only set `CORS_ORIGIN` to your Vercel URL.
+- **Vercel:** root directory `frontend`, `NEXT_PUBLIC_API_URL=https://<your-render-service>.onrender.com/api/v1`.
+- **Optional:** `render.blueprint.yaml` for managed DB/Redis (Worker plan is paid).
 
 ## Quick Start
 

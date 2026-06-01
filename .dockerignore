@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+**/dist
+.git
+.env
+**/.env
+**/.env.*
+frontend/.next
+*.md
+!DEPLOY.md
+agent-transcripts
+.cursor

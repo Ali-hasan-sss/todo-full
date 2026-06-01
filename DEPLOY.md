@@ -1,118 +1,121 @@
-# نشر TaskFlow — Render + Vercel
+# نشر TaskFlow — Render (Docker) + Vercel
 
-## نظرة عامة
+## النشر الموصى به (مجاني — بدون Blueprint)
 
-| المنصة | المكوّن |
-|--------|---------|
-| **Render** (مشروع Blueprint واحد) | PostgreSQL، Redis، API (Web)، Worker (إشعارات BullMQ) |
-| **Vercel** | واجهة Next.js |
+صورة Docker واحدة (`Dockerfile.render`) تضم:
 
-ملف `render.yaml` في الجذر ينشئ كل خدمات الباك‌اند دفعة واحدة عند تطبيق الـ Blueprint.
+- PostgreSQL
+- Redis
+- API
+- Worker (إشعارات BullMQ)
+
+على Render تحتاج **متغيراً واحداً فقط**:
+
+| المتغير | القيمة |
+|---------|--------|
+| `CORS_ORIGIN` | رابط Vercel، مثال: `https://your-app.vercel.app` |
+
+`DATABASE_URL` و`REDIS_URL` و`JWT_*` تُضبط تلقائياً داخل الحاوية.
 
 ---
 
-## 1) Render — أمر واحد (Blueprint)
-
-### المتطلبات
-
-- حساب [Render](https://render.com)
-- المستودع على GitHub/GitLab
+## 1) Render — Web Service (Docker)
 
 ### الخطوات
 
-1. ارفع المشروع إلى Git.
-2. في Render: **New → Blueprint**.
-3. اربط المستودع واختر الفرع.
-4. Render يقرأ `render.yaml` وينشئ:
-   - `taskflow-db` — PostgreSQL
-   - `taskflow-redis` — Redis (مهم: `noeviction` لـ BullMQ)
-   - `taskflow-api` — Web Service
-   - `taskflow-worker` — Background Worker
-5. عند أول نشر، عيّن متغير **`CORS_ORIGIN`** لخدمة `taskflow-api`:
-   - مثال: `https://your-app.vercel.app`
-   - عدة نطاقات مفصولة بفاصلة: `https://app.vercel.app,http://localhost:3000`
-6. عند كل نشر يُنشَأ تلقائياً:
-   - **أدمن:** `admin@todo.app` / `Password123!`
-   - **مستخدم تجريبي:** `demo@todo.app` / `Password123!` + مهام وإشعار ترحيب (مرة واحدة فقط)
+1. ارفع المشروع إلى GitHub/GitLab.
+2. Render → **New → Web Service** (وليس Blueprint).
+3. اربط المستودع.
+4. **Environment:** `Docker`
+5. **Dockerfile Path:** `Dockerfile.render`
+6. **Root Directory:** `.` (جذر المستودع)
+7. أضف متغير البيئة:
+   - `CORS_ORIGIN` = `https://your-app.vercel.app`
+8. **Create Web Service** → انتظر البناء.
 
-   لتغيير كلمة مرور الأدمن في الإنتاج، عيّن `SEED_ADMIN_PASSWORD` في Render قبل إعادة النشر.
+أو عبر `render.yaml` (خدمة Docker واحدة — لا يتطلب Blueprint مدفوع):
 
-7. تحقق من الصحة: `https://taskflow-api.onrender.com/health`
+```yaml
+# موجود في render.yaml — New → Blueprint يعمل أيضاً لخدمة واحدة
+```
 
-> **ملاحظة:** خطة Worker على Render غالباً تحتاج **Starter** (غير مجانية). الـ API وقاعدة البيانات يمكن أن تبقى على الخطة المجانية.
+9. بعد النشر: `https://<service-name>.onrender.com/health`
 
-### أوامر البناء المحلية (نفس ما يشغّله Render)
+### بيانات الدخول (تُنشأ تلقائياً عند أول تشغيل)
+
+| الحساب | البريد | كلمة المرور |
+|--------|--------|-------------|
+| أدمن | `admin@todo.app` | `Password123!` |
+| تجريبي | `demo@todo.app` | `Password123!` |
+
+### اختبار محلي للصورة
 
 ```bash
-cd backend
-npm ci
-npm run render:build   # prisma migrate deploy + build
-npm run render:start   # API
-npm run worker:prod    # Worker في طرفية ثانية
+docker build -f Dockerfile.render -t taskflow-render .
+docker run --rm -p 4000:4000 -e CORS_ORIGIN=http://localhost:3000 taskflow-render
 ```
+
+### تحذير مهم (الخطة المجانية)
+
+على Render المجاني، **قرص الحاوية مؤقت**: عند إعادة النشر أو إيقاف الخدمة قد تُفقد بيانات PostgreSQL داخل Docker. للإنتاج الجاد استخدم:
+
+- قرصاً دائماً (Paid Disk) على Render، أو
+- `render.blueprint.yaml` مع PostgreSQL مُدار من Render
 
 ---
 
 ## 2) Vercel — الواجهة
 
-1. [vercel.com](https://vercel.com) → **Add New Project** → اربط نفس المستودع.
+1. [vercel.com](https://vercel.com) → **Add New Project**
 2. **Root Directory:** `frontend`
-3. متغيرات البيئة:
+3. متغير البيئة:
 
 | المتغير | القيمة |
 |---------|--------|
-| `NEXT_PUBLIC_API_URL` | `https://taskflow-api.onrender.com/api/v1` |
+| `NEXT_PUBLIC_API_URL` | `https://<اسم-خدمة-render>.onrender.com/api/v1` |
 
-(استبدل `taskflow-api` باسم خدمتك الفعلي على Render.)
-
-4. **Deploy**.
-
-5. انسخ رابط Vercel النهائي وأضفه في Render → `taskflow-api` → **Environment** → `CORS_ORIGIN` → **Manual Deploy** لإعادة تشغيل الـ API.
+4. انشر، ثم ضع رابط Vercel في Render → `CORS_ORIGIN` → **Manual Deploy**.
 
 ---
 
-## 3) متغيرات البيئة
+## 3) متغيرات اختيارية (Docker)
 
-### Backend (Render — تُضبط تلقائياً من Blueprint)
-
-| المتغير | المصدر |
+| المتغير | الوصف |
 |---------|--------|
-| `DATABASE_URL` | قاعدة PostgreSQL |
-| `REDIS_URL` | Redis |
-| `JWT_ACCESS_SECRET` | يُولَّد تلقائياً |
-| `JWT_REFRESH_SECRET` | يُولَّد تلقائياً |
-| `CORS_ORIGIN` | **يدوياً** — رابط Vercel |
-| `SEED_ADMIN_EMAIL` | `admin@todo.app` (افتراضي من Blueprint) |
-| `SEED_DEMO_EMAIL` | `demo@todo.app` |
-| `SEED_ADMIN_PASSWORD` | اختياري — إن وُجد يُحدَّث كلمة مرور الأدمن عند النشر |
+| `CORS_ORIGIN` | **مطلوب** — رابط الواجهة |
+| `JWT_ACCESS_SECRET` | اختياري — يُولَّد تلقائياً إن تُرك فارغاً |
+| `JWT_REFRESH_SECRET` | اختياري — يُولَّد تلقائياً |
+| `SEED_ADMIN_PASSWORD` | اختياري — كلمة مرور أدمن مخصصة عند النشر |
 
-### Frontend (Vercel)
-
-| المتغير | مثال |
-|---------|------|
-| `NEXT_PUBLIC_API_URL` | `https://xxx.onrender.com/api/v1` |
+> إذا لم تُثبَّت `JWT_*` يدوياً، تتغير عند كل إعادة تشغيل كاملة للحاوية (تسجيل الخروج للجميع).
 
 ---
 
-## 4) استكشاف الأخطاء
+## 4) بديل: Blueprint متعدد الخدمات
+
+ملف `render.blueprint.yaml` (اختياري):
+
+- PostgreSQL + Redis + API + Worker منفصل
+- Worker يحتاج خطة **Starter** مدفوعة
+
+---
+
+## 5) استكشاف الأخطاء
 
 | المشكلة | الحل |
 |---------|------|
-| CORS من المتصفح | تأكد أن `CORS_ORIGIN` يطابق رابط Vercel بالضبط (مع `https://`) |
-| الإشعارات لا تُجدول | تأكد أن `taskflow-worker` يعمل وليس متوقفاً |
-| فشل migrate | راجع سجلات البناء؛ تأكد من وجود `prisma/migrations` في Git |
-| Redis/BullMQ | لا تغيّر `maxmemoryPolicy` عن `noeviction` |
+| CORS | `CORS_ORIGIN` يطابق رابط Vercel بالضبط (`https://`) |
+| الحاوية لا تبدأ | راجع Logs — غالباً `CORS_ORIGIN` غير معرّف |
+| فقدان البيانات بعد النشر | طبيعي على القرص المؤقت؛ فعّل Disk أو استخدم DB مُدار |
+| الإشعارات لا تعمل | تأكد أن الحاوية تعمل (Worker داخل نفس الصورة) |
 
 ---
 
-## 5) بديل: API + Worker في خدمة واحدة
+## 6) التطوير المحلي (docker compose)
 
-إذا لم ترد خطة Worker منفصلة، يمكن تشغيل الاثنين معاً (غير موصى به للإنتاج):
-
-في `render.yaml` احذف خدمة `worker` وغيّر `startCommand` للـ API إلى:
-
-```yaml
-startCommand: npm run start:all
+```bash
+docker compose up -d postgres redis
+cd backend && npm run dev
+npm run worker   # طرفية ثانية
+cd frontend && npm run dev
 ```
-
-وفي `backend/package.json` يوجد السكربت `start:all` (يتطلب `concurrently`).
